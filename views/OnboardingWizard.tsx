@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { CheckCircle, Shield, Building2, Mail, Loader2, Send, TriangleAlert } from 'lucide-react';
+import { CheckCircle, Shield, Building2, Mail, Loader2, Send, TriangleAlert, FileText } from 'lucide-react';
 import { registerAndVerifyInstitution } from '../lib/firebase';
 
 interface OnboardingWizardProps {
@@ -192,21 +192,46 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
           <div className="p-12 md:p-16">
              <div className="flex items-center gap-4 mb-10">
               <div className="p-3 bg-blue-600/10 rounded-2xl border border-blue-500/20">
-                <CheckCircle className="text-blue-500" size={24} />
+                <FileText className="text-blue-500" size={24} />
               </div>
               <div>
-                <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Step 3: Confirm</h2>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Activate school portal</p>
+                <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Step 3: Agreements</h2>
+                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Read carefully before activation</p>
               </div>
             </div>
 
-            <div className="bg-slate-950 border border-slate-800 rounded-3xl p-8 mb-10 text-xs font-mono text-slate-400 space-y-4">
-               <p className="text-emerald-500 font-black flex items-center gap-2">
-                 <CheckCircle size={14} /> Ready to Activate: {formData.email}
-               </p>
-               <p>1. I confirm the school information is accurate.</p>
-               <p>2. I agree to the Smart Class System terms of use.</p>
-               <p>3. I understand my school data will be protected by encryption.</p>
+            <div className="bg-slate-950 border border-slate-800 rounded-3xl p-8 mb-10 text-[11px] font-mono text-slate-400 space-y-6 max-h-80 overflow-y-auto custom-scrollbar">
+               <h4 className="text-white font-black uppercase border-b border-slate-800 pb-2">Terms & Conditions for Institution Registration</h4>
+               
+               <p>1. ELIGIBILITY & AUTHORITY: The person registering confirms they are the legal owner or authorized representative. NIC provided must belong to the authorized person.</p>
+               
+               <p>2. REGISTRATION & VERIFICATION: Requires valid NIC, phone number, and OTP verification. The Owner reserves the right to approve, reject, or suspend any school at any time.</p>
+               
+               <p>3. DIGITAL AGREEMENT: Acceptance of these Terms constitutes a legally binding digital agreement enforceable under electronic transaction laws.</p>
+               
+               <p>4. USE OF THE PLATFORM: Institutions may use the platform only for legal educational purposes. No misuse, unauthorized access, or tampering allowed.</p>
+               
+               <p>5. DATA RESPONSIBILITY: Institutions are responsible for accuracy of student, parent, and payment data. The Owner does not verify this data.</p>
+               
+               <p>6. PRIVACY & HANDLING: The Owner is not liable for data entered incorrectly or misused by institution staff.</p>
+               
+               <p>7. PAYMENTS & FEES: Fees may change. Non-payment leads to feature limitation or suspension. Owner is not responsible for school-student disputes.</p>
+               
+               <p>8. ATTENDANCE & QR: QR codes are for identification. Owner does not guarantee prevention of misuse.</p>
+               
+               <p>9. SYSTEM AVAILABILITY: Platform is "as is". 100% uptime is not guaranteed.</p>
+               
+               <p>10. LIMITATION OF LIABILITY: Owner is not liable for data loss, financial loss, or legal disputes. Use at your own risk.</p>
+               
+               <p>11. SUSPENSION: Access may be revoked for violations or security reasons.</p>
+               
+               <p>12. MODIFICATIONS: Owner may update terms at any time. Continued use means acceptance.</p>
+               
+               <p>13. GOVERNING LAW: Disputes resolved by Owner's chosen legal authority.</p>
+               
+               <p>14. ENTIRE AGREEMENT: These Terms override all prior agreements.</p>
+               
+               <p>15. ACCEPTANCE: By completing registration, you confirm agreement to all 15 points and legal authority to bind the school.</p>
             </div>
 
             <label className="flex items-start gap-4 cursor-pointer group">
@@ -222,7 +247,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
                 />
               </div>
               <span className="text-xs font-black text-slate-500 leading-normal group-hover:text-slate-300 transition-colors uppercase tracking-widest">
-                I AGREE AND WANT TO ACTIVATE MY SCHOOL.
+                I have read and agree to all 15 points of the terms above.
               </span>
             </label>
           </div>
@@ -243,10 +268,16 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
               ${(step === 3 && !formData.agreementAccepted) ? 'opacity-30 cursor-not-allowed' : 'hover:bg-slate-200'}
             `}
           >
-            {step === 3 ? 'Register School' : 'Next Step'}
+            {step === 3 ? 'Activate Now' : 'Next Step'}
           </button>
         </div>
       </div>
+      
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+      `}</style>
     </div>
   );
 };
