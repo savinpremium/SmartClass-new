@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { CheckCircle, Shield, Building2, Mail, Lock, Loader2, AlertCircle, Send, Terminal, Play } from 'lucide-react';
+import { CheckCircle, Shield, Building2, Mail, Lock, Loader2, AlertCircle, AlertTriangle, Send, Play, ExternalLink } from 'lucide-react';
 import { registerAndVerifyInstitution } from '../lib/firebase';
 
 interface OnboardingWizardProps {
@@ -40,7 +40,8 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
       nextStep();
     } catch (err: any) {
       setError(err.message);
-      if (err.message.includes("Firebase Console") || err.message.includes("operation-not-allowed")) {
+      // Check for common configuration issues
+      if (err.message.includes("DISABLED") || err.message.includes("operation-not-allowed")) {
         setIsConfigError(true);
       }
     } finally {
@@ -53,7 +54,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
     setTimeout(() => {
       setLoading(false);
       nextStep();
-    }, 1000);
+    }, 800);
   };
 
   const handleFinish = () => {
@@ -169,27 +170,38 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
               </div>
 
               {error && (
-                <div className="bg-rose-500/10 border border-rose-500/20 p-6 rounded-2xl flex flex-col items-start gap-4 text-left">
+                <div className="bg-rose-500/10 border border-rose-500/20 p-6 rounded-2xl flex flex-col items-start gap-4 text-left animate-in fade-in slide-in-from-bottom-2">
                   <div className="flex items-center gap-3 text-rose-500 text-[10px] font-black uppercase tracking-widest">
-                    <AlertCircle size={18} /> Configuration Alert
+                    <AlertTriangle size={18} /> Credentials Error
                   </div>
                   <p className="text-rose-200/80 text-xs font-medium leading-relaxed">
                     {error}
                   </p>
+                  
                   {isConfigError && (
                     <div className="w-full pt-4 mt-2 border-t border-rose-500/10 space-y-4">
-                      <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest">Immediate Actions:</p>
-                      <ul className="text-[10px] text-rose-200/60 font-mono space-y-2">
-                        <li>1. Login to Firebase Console</li>
-                        <li>2. Select Project: lms-e-6f847</li>
-                        <li>3. Go to Authentication > Sign-in method</li>
-                        <li>4. Enable 'Email/Password' Provider</li>
-                      </ul>
+                      <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+                         <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                           <ExternalLink size={10} /> Developer Note:
+                         </p>
+                         <p className="text-[10px] text-slate-400 leading-tight">
+                           The project "lms-e-6f847" needs the <b>Email/Password</b> provider enabled in Firebase Console.
+                         </p>
+                      </div>
+                      <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-xl space-y-2">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Configuration Steps:</p>
+                        <ul className="text-[10px] text-slate-400 font-mono space-y-1">
+                          <li>1. Open Firebase Console</li>
+                          <li>2. Select lms-e-6f847</li>
+                          <li>3. Auth &gt; Sign-in method</li>
+                          <li>4. Enable Email/Password</li>
+                        </ul>
+                      </div>
                       <button 
                         onClick={handleSimulateAuth}
-                        className="w-full py-4 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-2 hover:bg-emerald-500/30 transition-all"
+                        className="w-full py-4 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-xl font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-2 hover:bg-emerald-500/20 transition-all active:scale-[0.98]"
                       >
-                        <Play size={14} /> Bypass for UI Demo (Mock Auth)
+                        <Play size={14} /> Bypass & Continue (Simulation Mode)
                       </button>
                     </div>
                   )}
@@ -202,17 +214,17 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
                   disabled={loading || !formData.email || formData.password.length < 6}
                   className={`
                     w-full py-5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all
-                    ${loading ? 'bg-slate-800 text-slate-500' : 'bg-blue-600 text-white shadow-xl hover:bg-blue-700'}
+                    ${loading ? 'bg-slate-800 text-slate-500' : 'bg-blue-600 text-white shadow-xl hover:bg-blue-700 active:scale-[0.98]'}
                   `}
                 >
                   {loading ? <Loader2 className="animate-spin" size={18} /> : (
                     <>
-                      <Send size={16} /> Send Verification Link
+                      <Send size={16} /> Deploy Security Link
                     </>
                   )}
                 </button>
               )}
-              <p className="text-slate-500 text-[10px] font-bold">Secure deployment via Google Firebase Infrastructure.</p>
+              <p className="text-slate-500 text-[10px] font-bold">Encrypted node activation via Google Cloud Infrastructure.</p>
             </div>
           </div>
         )}
@@ -231,12 +243,12 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
 
             <div className="bg-slate-950 border border-slate-800 rounded-3xl p-8 mb-10 text-xs font-mono text-slate-400 space-y-4">
                <p className="text-emerald-500 font-black flex items-center gap-2">
-                 <CheckCircle size={14} /> Identification Verified for {formData.email}
+                 <CheckCircle size={14} /> Credentials Hub Verified for {formData.email}
                </p>
                <p>1. IDENTITY: Registered as Institutional Node under {formData.name}.</p>
                <p>2. AUTHORITY: I confirm I have the legal right to represent this entity.</p>
-               <p>3. BILLING: I acknowledge subscription packages are managed by the System Owner (Owner@2011).</p>
-               <p>4. DATA: All data is hosted on Firebase Secured Storage.</p>
+               <p>3. BILLING: I acknowledge subscription packages are managed by System Owner (Owner@2011).</p>
+               <p>4. DATA: All metadata is stored within Firebase Data Clusters.</p>
             </div>
 
             <label className="flex items-start gap-4 cursor-pointer group">
@@ -261,7 +273,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
         <div className="p-8 md:px-16 md:pb-16 flex justify-between gap-6">
           <button 
             onClick={step === 1 ? onCancel : prevStep}
-            className="px-10 py-4 bg-slate-900 text-slate-400 border border-slate-800 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:text-white transition-all"
+            className="px-10 py-4 bg-slate-900 text-slate-400 border border-slate-800 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:text-white transition-all active:scale-[0.98]"
           >
             {step === 1 ? 'Abort' : 'Back'}
           </button>

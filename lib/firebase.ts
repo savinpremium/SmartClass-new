@@ -23,18 +23,21 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getDatabase(app);
 
+/**
+ * Handles institution registration with specific logic for 'operation-not-allowed'.
+ */
 export const registerAndVerifyInstitution = async (email: string, pass: string) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     await sendEmailVerification(userCredential.user);
     return { success: true, user: userCredential.user };
   } catch (error: any) {
-    console.error("Firebase Auth Error:", error.code, error.message);
+    console.error("Firebase Auth Trace:", error.code, error.message);
     
-    // Map internal codes to human-readable developer instructions
+    // Explicit instructions for the specific 'operation-not-allowed' error
     if (error.code === 'auth/operation-not-allowed') {
-      const diagMsg = "Email/Password provider is disabled. Enable it in Firebase Console > Authentication > Sign-in method.";
-      throw new Error(diagMsg);
+      const errorMsg = "CRITICAL: Email/Password provider is currently DISABLED in the Firebase Console. Please enable it in 'Authentication > Sign-in method' for project lms-e-6f847.";
+      throw new Error(errorMsg);
     }
     
     throw error;
