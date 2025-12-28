@@ -1,0 +1,7 @@
+{
+  "name": "EduGlobe - Global Student Management System",
+  "description": "A comprehensive global student management platform featuring institution onboarding, QR-based attendance, payment tracking, and multi-tier role-based access control.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
