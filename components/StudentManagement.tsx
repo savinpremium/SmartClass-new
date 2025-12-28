@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, UserPlus, MoreVertical, QrCode, Download, Filter, X, CreditCard, ChevronRight, Globe } from 'lucide-react';
+import { Search, UserPlus, MoreVertical, QrCode, Download, Filter, X, ChevronRight, Globe, School } from 'lucide-react';
 import { Student } from '../types';
 
 interface Props {
@@ -21,13 +21,13 @@ const StudentManagement: React.FC<Props> = ({ students, onAddStudent }) => {
     <div className="space-y-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h2 className="text-4xl font-black text-white tracking-tighter uppercase italic">Registry</h2>
-          <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-1">Personnel Management Authority</p>
+          <h2 className="text-4xl font-black text-white tracking-tighter uppercase italic">Student List</h2>
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-1">Manage your school's students</p>
         </div>
         <button 
           className="flex items-center gap-3 bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-2xl hover:bg-blue-700 transition-all active:scale-95"
         >
-          <UserPlus size={18} /> Enroll Personnel
+          <UserPlus size={18} /> Add New Student
         </button>
       </div>
 
@@ -36,14 +36,14 @@ const StudentManagement: React.FC<Props> = ({ students, onAddStudent }) => {
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
           <input 
             type="text" 
-            placeholder="SEARCH REGISTRY BY NAME OR ID..." 
-            className="w-full pl-16 pr-8 py-5 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-black tracking-[0.1em] text-white focus:border-blue-500/50 outline-none transition-all placeholder:text-slate-700"
+            placeholder="Search by name or ID number..." 
+            className="w-full pl-16 pr-8 py-5 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-black tracking-widest text-white focus:border-blue-500/50 outline-none transition-all placeholder:text-slate-700"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <button className="flex items-center justify-center gap-3 px-8 py-5 bg-slate-800 text-slate-400 border border-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest hover:text-white transition-all">
-          <Filter size={18} /> Filters
+          <Filter size={18} /> Filter List
         </button>
       </div>
 
@@ -52,15 +52,19 @@ const StudentManagement: React.FC<Props> = ({ students, onAddStudent }) => {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-900 border-b border-slate-800">
-                <th className="px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Identified Personnel</th>
-                <th className="px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">System Identifier</th>
-                <th className="px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Classification</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Student Name</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Student ID</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Class/Grade</th>
                 <th className="px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</th>
-                <th className="px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Action</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">More</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
-              {filteredStudents.map((student) => (
+              {filteredStudents.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-10 py-20 text-center text-slate-600 font-bold uppercase tracking-widest text-xs">No students found</td>
+                </tr>
+              ) : filteredStudents.map((student) => (
                 <tr key={student.id} className="hover:bg-slate-900/50 transition-all group">
                   <td className="px-10 py-6">
                     <div className="flex items-center gap-4">
@@ -79,7 +83,7 @@ const StudentManagement: React.FC<Props> = ({ students, onAddStudent }) => {
                   <td className="px-10 py-6">
                     <div className="flex items-center gap-2 text-emerald-500">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                      <span className="text-[10px] font-black tracking-widest uppercase">Verified</span>
+                      <span className="text-[10px] font-black tracking-widest uppercase">Active</span>
                     </div>
                   </td>
                   <td className="px-10 py-6 text-right">
@@ -87,7 +91,7 @@ const StudentManagement: React.FC<Props> = ({ students, onAddStudent }) => {
                       <button 
                         onClick={() => setSelectedStudent(student)}
                         className="p-3 bg-slate-800 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl transition-all shadow-lg"
-                        title="Generate Access Key"
+                        title="Show ID Card"
                       >
                         <QrCode size={18} />
                       </button>
@@ -105,7 +109,7 @@ const StudentManagement: React.FC<Props> = ({ students, onAddStudent }) => {
 
       {selectedStudent && (
         <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center z-[100] p-6">
-          <div className="bg-[#0f172a] rounded-[4rem] border border-white/5 w-full max-w-lg p-12 text-center relative shadow-[0_0_100px_rgba(30,64,175,0.2)]">
+          <div className="bg-[#0f172a] rounded-[4rem] border border-white/5 w-full max-w-lg p-12 text-center relative shadow-2xl">
             <button 
               onClick={() => setSelectedStudent(null)}
               className="absolute top-10 right-10 p-2 text-slate-500 hover:text-white transition-colors"
@@ -113,12 +117,11 @@ const StudentManagement: React.FC<Props> = ({ students, onAddStudent }) => {
               <X size={24} />
             </button>
             
-            <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter mb-10">Credentials Preview</h3>
+            <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter mb-10">Student ID Card</h3>
             
             <div className="bg-gradient-to-br from-blue-700 to-indigo-950 p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group mb-10 text-left border border-white/10">
                <div className="absolute top-0 right-0 p-8">
-                 {/* Fixed: Added missing Globe import */}
-                 <Globe className="text-white/20" size={40} />
+                 <School className="text-white/20" size={40} />
                </div>
                
                <div className="flex items-center gap-6 mb-8">
@@ -131,17 +134,17 @@ const StudentManagement: React.FC<Props> = ({ students, onAddStudent }) => {
                  </div>
                  <div>
                    <h4 className="text-2xl font-black text-white tracking-tighter uppercase">{selectedStudent.name}</h4>
-                   <p className="text-blue-200 font-bold text-[10px] uppercase tracking-[0.2em] mt-1">{selectedStudent.grade} | Personnel</p>
+                   <p className="text-blue-200 font-bold text-[10px] uppercase tracking-widest mt-1">Student | Grade {selectedStudent.grade}</p>
                  </div>
                </div>
                
                <div className="pt-6 border-t border-white/10 flex justify-between items-end">
                  <div>
-                   <p className="text-white/40 font-black text-[9px] uppercase tracking-widest mb-1">Access Identifier</p>
+                   <p className="text-white/40 font-black text-[9px] uppercase tracking-widest mb-1">ID Number</p>
                    <p className="font-mono text-white text-sm font-bold">{selectedStudent.id}</p>
                  </div>
                  <div className="text-right">
-                   <p className="text-white/40 font-black text-[9px] uppercase tracking-widest mb-1">Institutional Host</p>
+                   <p className="text-white/40 font-black text-[9px] uppercase tracking-widest mb-1">School Hub</p>
                    <p className="text-white text-xs font-black uppercase tracking-widest">SMARTCLASS.LK</p>
                  </div>
                </div>
@@ -149,13 +152,13 @@ const StudentManagement: React.FC<Props> = ({ students, onAddStudent }) => {
 
             <div className="grid grid-cols-2 gap-4">
               <button className="flex-1 bg-white text-slate-950 py-5 rounded-3xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 shadow-2xl hover:bg-slate-200 transition-all">
-                <Download size={18} /> Export PDF
+                <Download size={18} /> Download ID
               </button>
               <button 
                 onClick={() => setSelectedStudent(null)}
                 className="flex-1 bg-slate-800 text-slate-400 py-5 rounded-3xl font-black uppercase tracking-widest text-xs"
               >
-                Close Portal
+                Close
               </button>
             </div>
           </div>

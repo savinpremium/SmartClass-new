@@ -8,9 +8,9 @@ export const MOCK_STUDENTS = [];
 
 export const NAV_ITEMS = {
   [UserRole.SUPER_ADMIN]: [
-    { label: 'Overview', icon: <LayoutDashboard size={20} />, id: 'dashboard' },
-    { label: 'Institutions', icon: <Building2 size={20} />, id: 'institutions' },
-    { label: 'Global Reports', icon: <ShieldCheck size={20} />, id: 'reports' }
+    { label: 'Dashboard', icon: <LayoutDashboard size={20} />, id: 'dashboard' },
+    { label: 'Schools', icon: <Building2 size={20} />, id: 'institutions' },
+    { label: 'System Health', icon: <ShieldCheck size={20} />, id: 'reports' }
   ],
   [UserRole.INSTITUTION_ADMIN]: [
     { label: 'Dashboard', icon: <LayoutDashboard size={20} />, id: 'dashboard' },
@@ -20,7 +20,7 @@ export const NAV_ITEMS = {
     { label: 'Staff', icon: <ShieldCheck size={20} />, id: 'staff' }
   ],
   [UserRole.STAFF]: [
-    { label: 'Quick Scan', icon: <ScanLine size={20} />, id: 'attendance' },
+    { label: 'Scan Now', icon: <ScanLine size={20} />, id: 'attendance' },
     { label: 'Student Info', icon: <Users size={20} />, id: 'students' }
   ]
 };

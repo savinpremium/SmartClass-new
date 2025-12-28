@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { CheckCircle, Shield, Building2, Mail, Lock, Loader2, AlertCircle, TriangleAlert, Send, Play, ExternalLink } from 'lucide-react';
+import { CheckCircle, Shield, Building2, Mail, Loader2, Send, TriangleAlert } from 'lucide-react';
 import { registerAndVerifyInstitution } from '../lib/firebase';
 
 interface OnboardingWizardProps {
@@ -32,7 +32,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
 
   const handleFirebaseVerification = async () => {
     if (!formData.email || formData.password.length < 6) {
-      setError("Valid email and minimum 6-character password required.");
+      setError("Please enter a correct email and password (at least 6 characters).");
       return;
     }
     setLoading(true);
@@ -60,7 +60,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
           <div key={s} className="flex flex-1 items-center last:flex-none">
             <div className={`
               w-12 h-12 rounded-2xl flex items-center justify-center font-black transition-all duration-300
-              ${step >= s ? 'bg-blue-600 text-white shadow-[0_0_30px_rgba(37,99,235,0.4)]' : 'bg-slate-800 text-slate-500 border border-slate-700'}
+              ${step >= s ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-800 text-slate-500 border border-slate-700'}
             `}>
               {step > s ? <CheckCircle size={22} /> : s}
             </div>
@@ -79,24 +79,24 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
                 <Building2 className="text-blue-500" size={24} />
               </div>
               <div>
-                <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Institutional Node</h2>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Operational Configuration</p>
+                <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Step 1: School Info</h2>
+                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Basic school setup</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="col-span-2">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Institution Name</label>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">School Name</label>
                 <input 
                   type="text" 
                   className="w-full bg-slate-950 border-2 border-slate-800/50 rounded-2xl px-6 py-4 text-sm font-bold text-white focus:border-blue-500/50 outline-none transition-all"
-                  placeholder="EX: EXCELLENCE ACADEMY"
+                  placeholder="Example: Global School"
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
                 />
               </div>
               <div className="col-span-2 md:col-span-1">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Authority NIC</label>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Owner ID (NIC)</label>
                 <input 
                   type="text" 
                   className="w-full bg-slate-950 border-2 border-slate-800/50 rounded-2xl px-6 py-4 text-sm font-bold text-white focus:border-blue-500/50 outline-none transition-all"
@@ -105,7 +105,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
                 />
               </div>
               <div className="col-span-2 md:col-span-1">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Contact Number</label>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Phone Number</label>
                 <input 
                   type="tel" 
                   className="w-full bg-slate-950 border-2 border-slate-800/50 rounded-2xl px-6 py-4 text-sm font-bold text-white focus:border-blue-500/50 outline-none transition-all"
@@ -114,7 +114,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
                 />
               </div>
               <div className="col-span-2">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Operational HQ</label>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Full Address</label>
                 <textarea 
                   className="w-full bg-slate-950 border-2 border-slate-800/50 rounded-2xl px-6 py-4 text-sm font-bold text-white focus:border-blue-500/50 outline-none h-32 resize-none"
                   value={formData.address}
@@ -134,26 +134,26 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
               </div>
             </div>
             
-            <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase mb-2">Auth Deployment</h2>
-            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-12">System Access Credentials</p>
+            <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase mb-2">Step 2: Login Details</h2>
+            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-12">Setup your school admin account</p>
             
             <div className="w-full max-w-sm space-y-6">
               <div className="text-left">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Authority Email</label>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Login Email</label>
                 <input 
                   type="email" 
                   className="w-full bg-slate-950 border-2 border-slate-800/50 rounded-2xl px-6 py-4 text-sm font-bold text-white focus:border-blue-500/50 outline-none"
-                  placeholder="admin@institution.lk"
+                  placeholder="admin@myschool.lk"
                   value={formData.email}
                   onChange={e => setFormData({...formData, email: e.target.value})}
                 />
               </div>
               <div className="text-left">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">New System Password</label>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Set Password</label>
                 <input 
                   type="password" 
                   className="w-full bg-slate-950 border-2 border-slate-800/50 rounded-2xl px-6 py-4 text-sm font-bold text-white focus:border-blue-500/50 outline-none"
-                  placeholder="••••••••"
+                  placeholder="Choose a strong password"
                   value={formData.password}
                   onChange={e => setFormData({...formData, password: e.target.value})}
                 />
@@ -162,7 +162,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
               {error && (
                 <div className="bg-rose-500/10 border border-rose-500/20 p-6 rounded-2xl flex flex-col items-start gap-4 text-left animate-in fade-in slide-in-from-bottom-2">
                   <div className="flex items-center gap-3 text-rose-500 text-[10px] font-black uppercase tracking-widest">
-                    <TriangleAlert size={18} /> Credentials Fault
+                    <TriangleAlert size={18} /> Error
                   </div>
                   <p className="text-rose-200/80 text-xs font-medium leading-relaxed">
                     {error}
@@ -180,11 +180,10 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
               >
                 {loading ? <Loader2 className="animate-spin" size={18} /> : (
                   <>
-                    <Send size={16} /> Deploy Secure Node
+                    <Send size={16} /> Save Admin Account
                   </>
                 )}
               </button>
-              <p className="text-slate-500 text-[10px] font-bold">Node activation requires Firebase authentication verification.</p>
             </div>
           </div>
         )}
@@ -193,22 +192,21 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
           <div className="p-12 md:p-16">
              <div className="flex items-center gap-4 mb-10">
               <div className="p-3 bg-blue-600/10 rounded-2xl border border-blue-500/20">
-                <Shield className="text-blue-500" size={24} />
+                <CheckCircle className="text-blue-500" size={24} />
               </div>
               <div>
-                <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Activation Agreement</h2>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Operational Terms & Data Sovereignty</p>
+                <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Step 3: Confirm</h2>
+                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Activate school portal</p>
               </div>
             </div>
 
             <div className="bg-slate-950 border border-slate-800 rounded-3xl p-8 mb-10 text-xs font-mono text-slate-400 space-y-4">
                <p className="text-emerald-500 font-black flex items-center gap-2">
-                 <CheckCircle size={14} /> Authority Credentials Validated: {formData.email}
+                 <CheckCircle size={14} /> Ready to Activate: {formData.email}
                </p>
-               <p>1. IDENTITY: Registered as a legally recognized Institutional Node.</p>
-               <p>2. AUTHORITY: Confirmation of legal right to represent the entity.</p>
-               <p>3. SECURITY: Acknowledgement of encrypted data handling protocols.</p>
-               <p>4. INFRASTRUCTURE: Agreement to operate within Global System Hub parameters.</p>
+               <p>1. I confirm the school information is accurate.</p>
+               <p>2. I agree to the Smart Class System terms of use.</p>
+               <p>3. I understand my school data will be protected by encryption.</p>
             </div>
 
             <label className="flex items-start gap-4 cursor-pointer group">
@@ -224,7 +222,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
                 />
               </div>
               <span className="text-xs font-black text-slate-500 leading-normal group-hover:text-slate-300 transition-colors uppercase tracking-widest">
-                I FORMALLY ACKNOWLEDGE AND ACTIVATE THIS INSTITUTIONAL NODE.
+                I AGREE AND WANT TO ACTIVATE MY SCHOOL.
               </span>
             </label>
           </div>
@@ -235,7 +233,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
             onClick={step === 1 ? onCancel : prevStep}
             className="px-10 py-4 bg-slate-900 text-slate-400 border border-slate-800 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:text-white transition-all active:scale-[0.98]"
           >
-            {step === 1 ? 'Abort' : 'Back'}
+            {step === 1 ? 'Cancel' : 'Go Back'}
           </button>
           <button 
             onClick={step === 3 ? handleFinish : (step === 2 ? handleFirebaseVerification : nextStep)}
@@ -245,7 +243,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
               ${(step === 3 && !formData.agreementAccepted) ? 'opacity-30 cursor-not-allowed' : 'hover:bg-slate-200'}
             `}
           >
-            {step === 3 ? 'Confirm Activation' : 'Continue'}
+            {step === 3 ? 'Register School' : 'Next Step'}
           </button>
         </div>
       </div>

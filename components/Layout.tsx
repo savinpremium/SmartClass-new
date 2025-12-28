@@ -43,7 +43,7 @@ const Layout: React.FC<LayoutProps> = ({ user, activeTab, setActiveTab, onLogout
               <span className="text-lg font-black tracking-tighter text-white uppercase">
                 SmartClass<span className="text-blue-500">.lk</span>
               </span>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">System Hub</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">System Hub</span>
             </div>
           </div>
 
@@ -78,7 +78,9 @@ const Layout: React.FC<LayoutProps> = ({ user, activeTab, setActiveTab, onLogout
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-white truncate">{user.name}</p>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider truncate">{user.role.replace('_', ' ')}</p>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider truncate">
+                  {user.role === UserRole.SUPER_ADMIN ? 'System Owner' : 'School Admin'}
+                </p>
               </div>
             </div>
             <button
@@ -86,7 +88,7 @@ const Layout: React.FC<LayoutProps> = ({ user, activeTab, setActiveTab, onLogout
               className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-2xl text-red-400 hover:bg-red-400/10 transition-all font-bold text-sm"
             >
               <LogOut size={18} />
-              <span>Terminate Session</span>
+              <span>Sign Out</span>
             </button>
           </div>
         </div>
@@ -104,7 +106,7 @@ const Layout: React.FC<LayoutProps> = ({ user, activeTab, setActiveTab, onLogout
           <div className="flex-1 flex items-center justify-end space-x-6">
             <div className="hidden sm:flex items-center space-x-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-              <span>System Operational</span>
+              <span>Live Connection</span>
             </div>
           </div>
         </header>
