@@ -1,14 +1,14 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 /**
  * Robust wrapper for generating AI insights with fallback mechanisms.
  * Handles "Rpc failed" errors by returning meaningful static analysis.
  */
 export const getSystemInsights = async (data: any) => {
   try {
+    // Create instance right before making an API call to ensure latest API key is used
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Analyze the following student management system stats and provide 3 high-level strategic bullet points for the system owner (Owner@2011). 
@@ -17,7 +17,6 @@ export const getSystemInsights = async (data: any) => {
       config: {
         temperature: 0.5,
         maxOutputTokens: 250,
-        // Fix: Added thinkingConfig to reserve tokens for final output when maxOutputTokens is set
         thinkingConfig: { thinkingBudget: 100 }
       }
     });
@@ -41,6 +40,7 @@ export const getSystemInsights = async (data: any) => {
 
 export const generateStudentReportSummary = async (studentName: string, attendance: any[], payments: any[]) => {
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Provide a friendly 2-sentence performance summary for student ${studentName}. Attendance: ${attendance.length} records. Payments: ${payments.length} records.`,

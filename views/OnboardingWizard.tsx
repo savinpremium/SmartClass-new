@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { CheckCircle, Shield, Building2, Mail, Lock, Loader2, AlertCircle, AlertTriangle, Send, Play, ExternalLink } from 'lucide-react';
+import { CheckCircle, Shield, Building2, Mail, Lock, Loader2, AlertCircle, TriangleAlert, Send, Play, ExternalLink } from 'lucide-react';
 import { registerAndVerifyInstitution } from '../lib/firebase';
 
 interface OnboardingWizardProps {
@@ -172,7 +172,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
               {error && (
                 <div className="bg-rose-500/10 border border-rose-500/20 p-6 rounded-2xl flex flex-col items-start gap-4 text-left animate-in fade-in slide-in-from-bottom-2">
                   <div className="flex items-center gap-3 text-rose-500 text-[10px] font-black uppercase tracking-widest">
-                    <AlertTriangle size={18} /> Credentials Error
+                    <TriangleAlert size={18} /> Credentials Error
                   </div>
                   <p className="text-rose-200/80 text-xs font-medium leading-relaxed">
                     {error}
