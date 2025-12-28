@@ -6,7 +6,7 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword 
 } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
-import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
+import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDneDiUzFALG_DcH1gNJmzB0WIddQcDxsA",
@@ -24,21 +24,25 @@ export const auth = getAuth(app);
 export const db = getDatabase(app);
 
 /**
- * Saves or updates an institution profile in the database
+ * Saves or updates an institution profile in the database with strict validation
  */
 export const saveInstitutionProfile = async (uid: string, data: any) => {
+  if (!uid) throw new Error("Security Error: No UID provided for profile save.");
   return set(ref(db, `institutions/${uid}`), {
     ...data,
+    uid,
     updatedAt: new Date().toISOString()
   });
 };
 
 /**
- * Fetches the institution profile from the database
+ * Listens to institution profile changes in real-time for security enforcement
  */
-export const getInstitutionProfile = async (uid: string) => {
-  const snapshot = await get(ref(db, `institutions/${uid}`));
-  return snapshot.exists() ? snapshot.val() : null;
+export const subscribeToProfile = (uid: string, callback: (data: any) => void) => {
+  const profileRef = ref(db, `institutions/${uid}`);
+  return onValue(profileRef, (snapshot) => {
+    callback(snapshot.val());
+  });
 };
 
 /**
@@ -49,19 +53,17 @@ export const registerAndVerifyInstitution = async (email: string, pass: string) 
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     await sendEmailVerification(userCredential.user);
     
-    // Create initial pending profile
+    // Create initial pending profile - Security Gate: agreementAccepted defaults to FALSE
     await saveInstitutionProfile(userCredential.user.uid, {
       email,
       agreementAccepted: false,
-      status: 'pending_verification'
+      status: 'pending_verification',
+      createdAt: new Date().toISOString()
     });
 
     return { success: true, user: userCredential.user };
   } catch (error: any) {
-    console.error("Firebase Auth Error:", error.code);
-    if (error.code === 'auth/operation-not-allowed') {
-      throw new Error("CRITICAL: DISABLED");
-    }
+    console.error("Firebase Security Auth Error:", error.code);
     throw error;
   }
 };
