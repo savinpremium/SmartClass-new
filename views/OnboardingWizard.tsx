@@ -12,7 +12,6 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isConfigError, setIsConfigError] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     country: 'Sri Lanka',
@@ -32,29 +31,20 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
   const prevStep = () => setStep(s => s - 1);
 
   const handleFirebaseVerification = async () => {
+    if (!formData.email || formData.password.length < 6) {
+      setError("Valid email and minimum 6-character password required.");
+      return;
+    }
     setLoading(true);
     setError(null);
-    setIsConfigError(false);
     try {
       await registerAndVerifyInstitution(formData.email, formData.password);
       nextStep();
     } catch (err: any) {
       setError(err.message);
-      // Check for common configuration issues
-      if (err.message.includes("DISABLED") || err.message.includes("operation-not-allowed")) {
-        setIsConfigError(true);
-      }
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSimulateAuth = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      nextStep();
-    }, 800);
   };
 
   const handleFinish = () => {
@@ -90,7 +80,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
               </div>
               <div>
                 <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Institutional Node</h2>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Primary Operational Parameters</p>
+                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Operational Configuration</p>
               </div>
             </div>
 
@@ -99,13 +89,13 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Institution Name</label>
                 <input 
                   type="text" 
-                  className="w-full bg-slate-950 border-2 border-slate-800/50 rounded-2xl px-6 py-4 text-sm font-bold tracking-wide text-white focus:border-blue-500/50 outline-none transition-all"
+                  className="w-full bg-slate-950 border-2 border-slate-800/50 rounded-2xl px-6 py-4 text-sm font-bold text-white focus:border-blue-500/50 outline-none transition-all"
                   placeholder="EX: EXCELLENCE ACADEMY"
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
                 />
               </div>
-              <div>
+              <div className="col-span-2 md:col-span-1">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Authority NIC</label>
                 <input 
                   type="text" 
@@ -114,7 +104,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
                   onChange={e => setFormData({...formData, nic: e.target.value})}
                 />
               </div>
-              <div>
+              <div className="col-span-2 md:col-span-1">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Contact Number</label>
                 <input 
                   type="tel" 
@@ -145,7 +135,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
             </div>
             
             <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase mb-2">Auth Deployment</h2>
-            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-12">Firebase Secured Email Link</p>
+            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-12">System Access Credentials</p>
             
             <div className="w-full max-w-sm space-y-6">
               <div className="text-left">
@@ -172,59 +162,29 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
               {error && (
                 <div className="bg-rose-500/10 border border-rose-500/20 p-6 rounded-2xl flex flex-col items-start gap-4 text-left animate-in fade-in slide-in-from-bottom-2">
                   <div className="flex items-center gap-3 text-rose-500 text-[10px] font-black uppercase tracking-widest">
-                    <TriangleAlert size={18} /> Credentials Error
+                    <TriangleAlert size={18} /> Credentials Fault
                   </div>
                   <p className="text-rose-200/80 text-xs font-medium leading-relaxed">
                     {error}
                   </p>
-                  
-                  {isConfigError && (
-                    <div className="w-full pt-4 mt-2 border-t border-rose-500/10 space-y-4">
-                      <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
-                         <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
-                           <ExternalLink size={10} /> Developer Note:
-                         </p>
-                         <p className="text-[10px] text-slate-400 leading-tight">
-                           The project "lms-e-6f847" needs the <b>Email/Password</b> provider enabled in Firebase Console.
-                         </p>
-                      </div>
-                      <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-xl space-y-2">
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Configuration Steps:</p>
-                        <ul className="text-[10px] text-slate-400 font-mono space-y-1">
-                          <li>1. Open Firebase Console</li>
-                          <li>2. Select lms-e-6f847</li>
-                          <li>3. Auth &gt; Sign-in method</li>
-                          <li>4. Enable Email/Password</li>
-                        </ul>
-                      </div>
-                      <button 
-                        onClick={handleSimulateAuth}
-                        className="w-full py-4 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-xl font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-2 hover:bg-emerald-500/20 transition-all active:scale-[0.98]"
-                      >
-                        <Play size={14} /> Bypass & Continue (Simulation Mode)
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
 
-              {!isConfigError && (
-                <button 
-                  onClick={handleFirebaseVerification}
-                  disabled={loading || !formData.email || formData.password.length < 6}
-                  className={`
-                    w-full py-5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all
-                    ${loading ? 'bg-slate-800 text-slate-500' : 'bg-blue-600 text-white shadow-xl hover:bg-blue-700 active:scale-[0.98]'}
-                  `}
-                >
-                  {loading ? <Loader2 className="animate-spin" size={18} /> : (
-                    <>
-                      <Send size={16} /> Deploy Security Link
-                    </>
-                  )}
-                </button>
-              )}
-              <p className="text-slate-500 text-[10px] font-bold">Encrypted node activation via Google Cloud Infrastructure.</p>
+              <button 
+                onClick={handleFirebaseVerification}
+                disabled={loading || !formData.email || formData.password.length < 6}
+                className={`
+                  w-full py-5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all
+                  ${loading ? 'bg-slate-800 text-slate-500' : 'bg-blue-600 text-white shadow-xl hover:bg-blue-700 active:scale-[0.98]'}
+                `}
+              >
+                {loading ? <Loader2 className="animate-spin" size={18} /> : (
+                  <>
+                    <Send size={16} /> Deploy Secure Node
+                  </>
+                )}
+              </button>
+              <p className="text-slate-500 text-[10px] font-bold">Node activation requires Firebase authentication verification.</p>
             </div>
           </div>
         )}
@@ -236,19 +196,19 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
                 <Shield className="text-blue-500" size={24} />
               </div>
               <div>
-                <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Node Activation</h2>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Final Operational Terms</p>
+                <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Activation Agreement</h2>
+                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Operational Terms & Data Sovereignty</p>
               </div>
             </div>
 
             <div className="bg-slate-950 border border-slate-800 rounded-3xl p-8 mb-10 text-xs font-mono text-slate-400 space-y-4">
                <p className="text-emerald-500 font-black flex items-center gap-2">
-                 <CheckCircle size={14} /> Credentials Hub Verified for {formData.email}
+                 <CheckCircle size={14} /> Authority Credentials Validated: {formData.email}
                </p>
-               <p>1. IDENTITY: Registered as Institutional Node under {formData.name}.</p>
-               <p>2. AUTHORITY: I confirm I have the legal right to represent this entity.</p>
-               <p>3. BILLING: I acknowledge subscription packages are managed by System Owner (Owner@2011).</p>
-               <p>4. DATA: All metadata is stored within Firebase Data Clusters.</p>
+               <p>1. IDENTITY: Registered as a legally recognized Institutional Node.</p>
+               <p>2. AUTHORITY: Confirmation of legal right to represent the entity.</p>
+               <p>3. SECURITY: Acknowledgement of encrypted data handling protocols.</p>
+               <p>4. INFRASTRUCTURE: Agreement to operate within Global System Hub parameters.</p>
             </div>
 
             <label className="flex items-start gap-4 cursor-pointer group">
@@ -264,7 +224,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
                 />
               </div>
               <span className="text-xs font-black text-slate-500 leading-normal group-hover:text-slate-300 transition-colors uppercase tracking-widest">
-                I ACKNOWLEDGE ALL OPERATIONAL PROTOCOLS. ACTIVATE NODE.
+                I FORMALLY ACKNOWLEDGE AND ACTIVATE THIS INSTITUTIONAL NODE.
               </span>
             </label>
           </div>
@@ -285,7 +245,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onCance
               ${(step === 3 && !formData.agreementAccepted) ? 'opacity-30 cursor-not-allowed' : 'hover:bg-slate-200'}
             `}
           >
-            {step === 3 ? 'Deploy Node' : 'Continue'}
+            {step === 3 ? 'Confirm Activation' : 'Continue'}
           </button>
         </div>
       </div>
