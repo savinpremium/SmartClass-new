@@ -7,10 +7,9 @@ import SuperAdminDashboard from './components/SuperAdminDashboard';
 import StudentManagement from './components/StudentManagement';
 import AttendanceModule from './components/AttendanceModule';
 import OnboardingWizard from './views/OnboardingWizard';
-// Added X to imports
-import { Lock, ShieldCheck, Loader2, School, Info, AlertTriangle, ExternalLink, Settings, X } from 'lucide-react';
-import { auth } from './lib/firebase';
-import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+import { Lock, ShieldCheck, Loader2, School, Info, Mail, CheckCircle, RefreshCw, LogOut, Database, Settings, X, Plus } from 'lucide-react';
+import { auth, getInstitutionProfile, saveInstitutionProfile } from './lib/firebase';
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 
 const PACKAGE_CONFIG: Package[] = [
   { id: 'pkg-1', name: 'Lite School', price: 49, studentLimit: 200, features: ['Attendance', 'QR ID'] },
@@ -37,24 +36,32 @@ const App: React.FC = () => {
   const [showSetupGuide, setShowSetupGuide] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const userEmail = user.email?.toLowerCase();
         const isOwner = userEmail === 'owner2011@smartclass.lk' || userEmail === 'owner@2011@smartclass.lk';
         const role = isOwner ? UserRole.SUPER_ADMIN : UserRole.INSTITUTION_ADMIN;
         
+        let agreementAccepted = true;
+        if (!isOwner) {
+          const profile = await getInstitutionProfile(user.uid);
+          agreementAccepted = profile?.agreementAccepted === true;
+        }
+
         setState(prev => ({
           ...prev,
           user: { 
+            uid: user.uid,
             role, 
-            name: isOwner ? 'System Owner' : (user.displayName || user.email?.split('@')[0] || 'User'),
+            name: isOwner ? 'System Owner' : (user.displayName || user.email?.split('@')[0] || 'Institution Admin'),
             email: user.email || undefined,
+            emailVerified: user.emailVerified,
+            agreementAccepted: agreementAccepted,
             institutionId: role === UserRole.INSTITUTION_ADMIN ? 'school-1' : undefined
           }
         }));
       } else {
-        // If not authenticated via Firebase, check if we are already in a "local owner" session
-        // (This happens if we used the hardcoded bypass below)
+        setState(prev => ({ ...prev, user: null }));
       }
       setIsLoading(false);
     });
@@ -66,17 +73,18 @@ const App: React.FC = () => {
     setAuthError(null);
     setIsLoading(true);
     
-    const trimmedId = loginId.trim();
-    const trimmedPass = loginPass.trim();
+    const id = loginId.trim();
+    const pass = loginPass.trim();
 
-    // SYSTEM OWNER BYPASS: Allows login even if Firebase config is broken
-    if (trimmedId === 'Owner@2011' && trimmedPass === 'Owner@2011') {
+    if (id === 'Owner@2011' && pass === 'Owner@2011') {
       setState(prev => ({
         ...prev,
         user: { 
           role: UserRole.SUPER_ADMIN, 
           name: 'System Owner',
-          email: 'owner2011@smartclass.lk'
+          email: 'owner2011@smartclass.lk',
+          emailVerified: true,
+          agreementAccepted: true
         }
       }));
       setIsLoading(false);
@@ -84,23 +92,16 @@ const App: React.FC = () => {
     }
 
     try {
-      let finalEmail = trimmedId;
+      let finalEmail = id;
       if (!finalEmail.includes('@')) {
         finalEmail = `${finalEmail.toLowerCase()}@smartclass.lk`;
       }
-      
-      await signInWithEmailAndPassword(auth, finalEmail, trimmedPass);
-      setLoginId('');
-      setLoginPass('');
+      await signInWithEmailAndPassword(auth, finalEmail, pass);
     } catch (err: any) {
-      console.error("Login Error:", err.code);
       if (err.code === 'auth/operation-not-allowed') {
-        setAuthError("Firebase Error: Email login is disabled in the console.");
         setShowSetupGuide(true);
-      } else if (err.code === 'auth/invalid-email') {
-        setAuthError("Please enter a valid user email.");
       } else {
-        setAuthError("Wrong user or password. Please try again.");
+        setAuthError("Invalid credentials. Please check your login details.");
       }
     } finally {
       setIsLoading(false);
@@ -108,104 +109,165 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (e) {}
+    try { await signOut(auth); } catch (e) {}
     setState(prev => ({ ...prev, user: null }));
+    setActiveTab('dashboard');
   };
 
-  const handleOnboardingComplete = (data: any) => {
-    const newSchool: Institution = {
-      id: `school-${Date.now()}`,
-      name: data.name,
-      country: data.country,
-      address: data.address,
-      nic: data.nic,
-      contact: data.contact,
-      email: data.email,
-      status: 'pending',
-      agreementAcceptedAt: new Date().toISOString(),
-      institutionCode: `SCH-${Math.floor(Math.random() * 900) + 100}`,
-      verified: false
-    };
+  const reloadUserStatus = async () => {
+    setIsLoading(true);
+    if (auth.currentUser) {
+      await auth.currentUser.reload();
+      const profile = await getInstitutionProfile(auth.currentUser.uid);
+      setState(prev => prev.user ? ({
+        ...prev,
+        user: {
+          ...prev.user!,
+          emailVerified: auth.currentUser?.emailVerified,
+          agreementAccepted: profile?.agreementAccepted === true
+        }
+      }) : prev);
+    }
+    setIsLoading(false);
+  };
 
-    setState(prev => ({
-      ...prev,
-      institutions: [...prev.institutions, newSchool]
-    }));
+  const handleOnboardingComplete = async (data: any) => {
+    if (state.user?.uid) {
+      await saveInstitutionProfile(state.user.uid, {
+        ...data,
+        status: 'active',
+        agreementAccepted: true,
+        agreementAcceptedAt: new Date().toISOString()
+      });
+      
+      const newSchool: Institution = {
+        id: `school-${Date.now()}`,
+        name: data.name,
+        country: data.country,
+        address: data.address,
+        nic: data.nic,
+        contact: data.contact,
+        email: data.email,
+        status: 'active',
+        agreementAcceptedAt: new Date().toISOString(),
+        institutionCode: `SCH-${Math.floor(Math.random() * 900) + 100}`,
+        verified: true
+      };
+
+      setState(prev => ({
+        ...prev,
+        institutions: [...prev.institutions, newSchool],
+        user: prev.user ? { ...prev.user, agreementAccepted: true } : null
+      }));
+    }
     setIsRegistering(false);
   };
 
   const renderContent = () => {
-    if (!state.user) return null;
+    const { user } = state;
+    if (!user) return null;
 
-    if (state.user.role === UserRole.SUPER_ADMIN) {
+    // Security Gate 1: Email Verification
+    if (!user.emailVerified && user.role !== UserRole.SUPER_ADMIN) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in duration-700">
+           <div className="w-24 h-24 bg-blue-600/10 rounded-[2.5rem] flex items-center justify-center border border-blue-500/20 mb-10 shadow-2xl">
+              <Mail className="text-blue-500" size={40} />
+           </div>
+           <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase mb-4">Verify Your Email</h2>
+           <p className="max-w-md text-slate-500 text-[11px] font-black uppercase tracking-widest leading-relaxed mb-10">
+              We've sent a verification link to <span className="text-blue-400">{user.email}</span>. 
+              Please verify your account to access the school panel.
+           </p>
+           <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
+              <button 
+                onClick={reloadUserStatus}
+                className="flex-1 bg-white text-slate-950 py-5 rounded-3xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 hover:bg-slate-200 transition-all shadow-xl"
+              >
+                <RefreshCw size={16} /> I've Verified My Email
+              </button>
+              <button 
+                onClick={() => auth.currentUser && sendEmailVerification(auth.currentUser)}
+                className="flex-1 bg-slate-900 text-slate-400 border border-slate-800 py-5 rounded-3xl font-black uppercase tracking-widest text-[10px]"
+              >
+                Resend Link
+              </button>
+           </div>
+        </div>
+      );
+    }
+
+    // Security Gate 2: Agreement Acceptance
+    if (!user.agreementAccepted && user.role !== UserRole.SUPER_ADMIN) {
+      return (
+        <div className="max-w-4xl mx-auto">
+          <OnboardingWizard onComplete={handleOnboardingComplete} onCancel={handleLogout} />
+        </div>
+      );
+    }
+
+    // Dashboard Access
+    if (user.role === UserRole.SUPER_ADMIN) {
       switch (activeTab) {
         case 'dashboard': return <SuperAdminDashboard institutions={state.institutions} onAddInstitution={() => setIsRegistering(true)} packages={state.packages} />;
         case 'institutions': return (
           <div className="space-y-8 animate-in fade-in duration-500">
             <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">School Registry</h2>
-            {state.institutions.length === 0 ? (
-              <div className="py-20 text-center border-2 border-dashed border-slate-800 rounded-[3rem]">
-                <p className="text-slate-600 font-black uppercase tracking-widest">No schools registered yet</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {state.institutions.map(inst => (
-                  <div key={inst.id} className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] hover:border-blue-500/50 transition-all group">
-                     <div className="flex justify-between items-start mb-6">
-                        <div className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center font-black text-blue-500 border border-slate-700">
-                          <School size={24} />
-                        </div>
-                        <span className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full border ${inst.verified ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>
-                          {inst.verified ? 'active' : 'pending'}
-                        </span>
-                     </div>
-                     <h3 className="text-xl font-bold text-white mb-2 truncate">{inst.name}</h3>
-                     <p className="text-slate-500 text-xs mb-6 font-mono">{inst.email}</p>
-                     <div className="pt-6 border-t border-slate-800 flex justify-between items-center">
-                       <span className="font-mono text-[10px] text-slate-500 uppercase tracking-widest">{inst.institutionCode}</span>
-                       <button className="text-blue-500 text-xs font-black uppercase tracking-widest group-hover:underline">Manage School</button>
-                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {state.institutions.map(inst => (
+                <div key={inst.id} className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] hover:border-blue-500/50 transition-all group">
+                   <div className="flex justify-between items-start mb-6">
+                      <div className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center font-black text-blue-500 border border-slate-700">
+                        <School size={24} />
+                      </div>
+                      <span className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">active</span>
+                   </div>
+                   <h3 className="text-xl font-bold text-white mb-2 truncate">{inst.name}</h3>
+                   <p className="text-slate-500 text-xs mb-6 font-mono">{inst.email}</p>
+                   <div className="pt-6 border-t border-slate-800 flex justify-between items-center">
+                     <span className="font-mono text-[10px] text-slate-500 uppercase tracking-widest">{inst.institutionCode}</span>
+                     <button className="text-blue-500 text-xs font-black uppercase tracking-widest group-hover:underline">Manage</button>
+                   </div>
+                </div>
+              ))}
+              {state.institutions.length === 0 && (
+                <button onClick={() => setIsRegistering(true)} className="aspect-square border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center text-slate-600 hover:text-blue-500 hover:border-blue-500/50 transition-all group">
+                  <Plus className="mb-4 group-hover:scale-110 transition-transform" size={40} />
+                  <span className="font-black uppercase tracking-widest text-[10px]">Register First School</span>
+                </button>
+              )}
+            </div>
           </div>
         );
-        default: return <div className="text-center py-40 text-slate-600 font-black uppercase italic tracking-widest">Awaiting Data...</div>;
+        default: return <div className="text-center py-40 text-slate-600 font-black uppercase tracking-widest">Awaiting Data...</div>;
       }
     }
 
-    if (state.user.role === UserRole.INSTITUTION_ADMIN) {
+    if (user.role === UserRole.INSTITUTION_ADMIN) {
       switch (activeTab) {
         case 'dashboard':
           return (
             <div className="space-y-10 animate-in fade-in duration-500">
-              <h1 className="text-3xl font-black text-white italic tracking-tighter uppercase">My Dashboard</h1>
+              <h1 className="text-3xl font-black text-white italic tracking-tighter uppercase">School Panel</h1>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                   { label: 'Students', val: state.students.length, color: 'bg-blue-600' },
-                  { label: 'Status', val: 'Online', color: 'bg-slate-900 border border-slate-800' },
-                  { label: 'Payments', val: state.payments.length, color: 'bg-slate-900 border border-slate-800' }
+                  { label: 'Status', val: 'Active', color: 'bg-slate-900 border border-slate-800' },
+                  { label: 'System', val: 'Cloud Sync', color: 'bg-slate-900 border border-slate-800' }
                 ].map((stat, i) => (
                   <div key={i} className={`${stat.color} p-10 rounded-[3rem] shadow-2xl transition-transform hover:scale-[1.01]`}>
                     <p className="text-[10px] font-black uppercase tracking-widest mb-3 opacity-60">{stat.label}</p>
-                    <p className="text-4xl font-black tracking-tighter">{stat.val}</p>
+                    <p className="text-4xl font-black tracking-tighter uppercase italic">{stat.val}</p>
                   </div>
                 ))}
               </div>
             </div>
           );
-        case 'students':
-          return <StudentManagement students={state.students} onAddStudent={() => {}} />;
-        case 'attendance':
-          return <AttendanceModule />;
-        default:
-          return <div className="text-center py-40 text-slate-600 font-bold uppercase tracking-widest italic">Please select a tab</div>;
+        case 'students': return <StudentManagement students={state.students} onAddStudent={() => {}} />;
+        case 'attendance': return <AttendanceModule />;
+        default: return <div className="text-center py-40 text-slate-600 font-bold uppercase tracking-widest italic">Feature coming soon</div>;
       }
     }
-
     return null;
   };
 
@@ -229,8 +291,8 @@ const App: React.FC = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-600/10 rounded-3xl border border-blue-500/20 mb-8">
               <Lock className="text-blue-500" size={32} />
             </div>
-            <h1 className="text-3xl font-black tracking-tighter text-white uppercase italic mb-2">Smart Class Portal</h1>
-            <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest">Enter login details</p>
+            <h1 className="text-3xl font-black tracking-tighter text-white uppercase italic mb-2">Smart Class Hub</h1>
+            <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest italic">Global Management System</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -259,79 +321,30 @@ const App: React.FC = () => {
               </div>
             )}
 
-            <button 
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest py-6 rounded-3xl shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-            >
-              {isLoading ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
-              Login to System
+            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest py-6 rounded-3xl shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+              <ShieldCheck size={20} /> Login to System
             </button>
 
-            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 flex items-center gap-3">
-              <Info size={16} className="text-blue-400 flex-shrink-0" />
-              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
-                System Owner? Use <span className="text-white">Owner@2011</span> with pass <span className="text-white">Owner@2011</span>
-              </p>
+            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-5 flex items-start gap-4">
+              <Database size={20} className="text-blue-400 mt-1 flex-shrink-0" />
+              <div>
+                <p className="text-[10px] text-white font-black uppercase tracking-widest mb-1">Owner Access Enabled</p>
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
+                  Login with <span className="text-blue-400">Owner@2011</span> to bypass setup.
+                </p>
+              </div>
             </div>
 
             <div className="pt-8 text-center space-y-4 border-t border-white/5">
-              <p className="text-slate-600 text-[9px] font-black uppercase tracking-widest">New school registration?</p>
-              <button 
-                type="button"
-                onClick={() => setIsRegistering(true)}
-                className="w-full py-4 rounded-2xl bg-slate-900 text-slate-400 border border-slate-800 font-black text-[10px] uppercase tracking-widest hover:text-white transition-all"
-              >
-                Register Now
+              <button type="button" onClick={() => setIsRegistering(true)} className="w-full py-4 rounded-2xl bg-slate-900 text-slate-300 border border-slate-800 font-black text-[10px] uppercase tracking-widest hover:text-white transition-all shadow-lg">
+                Register New Institution
               </button>
             </div>
           </form>
         </div>
 
-        {/* Firebase Setup Instructions Modal */}
-        {showSetupGuide && (
-          <div className="fixed inset-0 bg-slate-950/98 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-            <div className="max-w-xl w-full bg-[#0f172a] border border-white/10 rounded-[3rem] p-10 shadow-2xl relative">
-              <button onClick={() => setShowSetupGuide(false)} className="absolute top-8 right-8 text-slate-500 hover:text-white"><X size={24} /></button>
-              
-              <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center border border-amber-500/20 mb-8">
-                <Settings className="text-amber-500" size={32} />
-              </div>
-
-              <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase mb-4">Firebase Config Needed</h2>
-              <p className="text-slate-400 text-sm font-medium leading-relaxed mb-8">
-                The <span className="text-white font-bold italic">auth/operation-not-allowed</span> error means the Email sign-in method is disabled in your project.
-              </p>
-
-              <div className="space-y-4 mb-10">
-                {[
-                  "Go to Firebase Console (lms-e-6f847)",
-                  "Click 'Authentication' in the sidebar",
-                  "Go to 'Sign-in method' tab",
-                  "Find 'Email/Password' and set it to Enabled",
-                  "Save and Refresh this app"
-                ].map((step, i) => (
-                  <div key={i} className="flex items-center gap-4 bg-slate-950/50 p-4 rounded-2xl border border-slate-800">
-                    <span className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-black text-white">{i + 1}</span>
-                    <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">{step}</span>
-                  </div>
-                ))}
-              </div>
-
-              <a 
-                href="https://console.firebase.google.com/project/lms-e-6f847/authentication/providers" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-full bg-white text-slate-950 py-5 rounded-3xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-slate-200 transition-all shadow-2xl"
-              >
-                Open Console Now <ExternalLink size={16} />
-              </a>
-            </div>
-          </div>
-        )}
-
         {isRegistering && (
-          <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[100] overflow-y-auto animate-in fade-in duration-300">
+          <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[100] overflow-y-auto">
              <div className="max-w-4xl mx-auto px-6 py-10">
                 <OnboardingWizard onComplete={handleOnboardingComplete} onCancel={() => setIsRegistering(false)} />
              </div>
@@ -344,13 +357,6 @@ const App: React.FC = () => {
   return (
     <Layout user={state.user} activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout}>
       {renderContent()}
-      {isRegistering && (
-        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[100] overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-6 py-10">
-            <OnboardingWizard onComplete={handleOnboardingComplete} onCancel={() => setIsRegistering(false)} />
-          </div>
-        </div>
-      )}
     </Layout>
   );
 };

@@ -29,7 +29,7 @@ export interface Institution {
 }
 
 export interface Student {
-  id: string; // The generated ID LK-ABC-2026-7391
+  id: string;
   name: string;
   grade: string;
   whatsapp: string;
@@ -63,6 +63,9 @@ export interface AppState {
     institutionId?: string;
     name: string;
     email?: string;
+    emailVerified?: boolean;
+    agreementAccepted?: boolean;
+    uid?: string;
   } | null;
   institutions: Institution[];
   students: Student[];

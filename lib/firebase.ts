@@ -6,7 +6,7 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword 
 } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDneDiUzFALG_DcH1gNJmzB0WIddQcDxsA",
@@ -24,22 +24,44 @@ export const auth = getAuth(app);
 export const db = getDatabase(app);
 
 /**
- * Handles institution registration with specific logic for 'operation-not-allowed'.
+ * Saves or updates an institution profile in the database
+ */
+export const saveInstitutionProfile = async (uid: string, data: any) => {
+  return set(ref(db, `institutions/${uid}`), {
+    ...data,
+    updatedAt: new Date().toISOString()
+  });
+};
+
+/**
+ * Fetches the institution profile from the database
+ */
+export const getInstitutionProfile = async (uid: string) => {
+  const snapshot = await get(ref(db, `institutions/${uid}`));
+  return snapshot.exists() ? snapshot.val() : null;
+};
+
+/**
+ * Handles institution registration with immediate verification email.
  */
 export const registerAndVerifyInstitution = async (email: string, pass: string) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     await sendEmailVerification(userCredential.user);
+    
+    // Create initial pending profile
+    await saveInstitutionProfile(userCredential.user.uid, {
+      email,
+      agreementAccepted: false,
+      status: 'pending_verification'
+    });
+
     return { success: true, user: userCredential.user };
   } catch (error: any) {
-    console.error("Firebase Auth Trace:", error.code, error.message);
-    
-    // Explicit instructions for the specific 'operation-not-allowed' error
+    console.error("Firebase Auth Error:", error.code);
     if (error.code === 'auth/operation-not-allowed') {
-      const errorMsg = "CRITICAL: Email/Password provider is currently DISABLED in the Firebase Console. Please enable it in 'Authentication > Sign-in method' for project lms-e-6f847.";
-      throw new Error(errorMsg);
+      throw new Error("CRITICAL: DISABLED");
     }
-    
     throw error;
   }
 };
